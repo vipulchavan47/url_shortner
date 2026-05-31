@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>URL Shortener</h1>
+            <p class="subtitle">Create short and shareable links instantly</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <!-- Form Section -->
+            <div id="formSection" class="form-section active">
+                <form id="shortenForm">
+                    <!-- Long URL Input -->
+                    <div class="form-group">
+                        <label for="longUrl">Long URL *</label>
+                        <input 
+                            type="text" 
+                            id="longUrl" 
+                            placeholder="Enter your URL here"
+                            required
+                        >
+                        <span class="error-message" id="urlError"></span>
+                    </div>
+
+                    <!-- Custom Alias Input -->
+                    <div class="form-group">
+                        <label for="customCode">Custom Alias (optional)</label>
+                        <div class="alias-wrapper">
+                            <input 
+                                type="text" 
+                                id="customCode" 
+                                placeholder="e.g. vipul"
+                                maxlength="50"
+                            >
+                            <span class="char-counter"><span id="charCount">0</span>/50</span>
+                        </div>
+                        <span class="error-message" id="aliasError"></span>
+                        <p class="helper-text">Only lowercase letters and numbers allowed</p>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="submit" id="generateBtn" class="btn btn-primary">
+                        <span class="btn-text">Generate Short URL</span>
+                        <span class="spinner" id="spinner"></span>
+                    </button>
+                </form>
+
+                <!-- Error Alert -->
+                <div id="errorAlert" class="alert alert-error hidden">
+                    <span class="alert-icon">⚠️</span>
+                    <span id="errorMessage"></span>
+                </div>
+            </div>
+
+            <!-- Success Section -->
+            <div id="successSection" class="success-section hidden">
+                <div class="success-icon">✓</div>
+                <h2>Success!</h2>
+                <p class="success-message">Your short URL has been created</p>
+
+                <!-- Short URL Display -->
+                <div class="url-display">
+                    <input 
+                        type="text" 
+                        id="shortUrlDisplay" 
+                        readonly 
+                        class="url-input"
+                    >
+                    <button id="copyBtn" class="btn btn-secondary" title="Copy to clipboard">
+                        📋 Copy
+                    </button>
+                </div>
+
+                <!-- Toast Notification -->
+                <div id="toast" class="toast hidden">
+                    ✓ Copied to clipboard!
+                </div>
+
+                <!-- Actions -->
+                <div class="action-buttons">
+                    <a id="openBtn" target="_blank" class="btn btn-outline">
+                        🔗 Open Link
+                    </a>
+                    <button id="newUrlBtn" class="btn btn-primary">
+                        + Create Another
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Built with ❤️ for sharing</p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

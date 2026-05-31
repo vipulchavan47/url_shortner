@@ -17,27 +17,54 @@ public class UrlServiceImpl {
         this.repository = repository;
     }
 
-    // 1. Shorten URL
-    public String shortenUrl(String longUrl) {
+    // Shorten URL with optional custom code
+    public String shortenUrl(String longUrl, String customCode) {
 
-        // Check if already exists
-        Optional<UrlMapping> existing = repository.findByLongUrl(longUrl);
-        if (existing.isPresent()) {
-            return existing.get().getShortCode();
+        // Validate URL
+        if (longUrl == null || longUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("URL cannot be empty");
         }
 
-        // Save to get ID
-        UrlMapping mapping = new UrlMapping(longUrl);
-        mapping = repository.save(mapping);
+        // If custom code is provided, validate it
+        if (customCode != null && !customCode.trim().isEmpty()) {
+            customCode = customCode.trim().toLowerCase();
+            
+            // Check if custom code already exists
+            if (repository.findByShortCode(customCode).isPresent()) {
+                throw new IllegalArgumentException("Custom alias already exists");
+            }
+            
+            // Validate custom code format (alphanumeric only)
+            if (!customCode.matches("^[a-z0-9]+$")) {
+                throw new IllegalArgumentException("Custom alias must contain only lowercase letters and numbers");
+            }
+            
+            // Save with custom code
+            UrlMapping mapping = new UrlMapping(longUrl);
+            mapping.setShortCode(customCode);
+            repository.save(mapping);
+            return customCode;
+        } else {
+            // Auto-generate short code
+            // Check if URL already exists
+            Optional<UrlMapping> existing = repository.findByLongUrl(longUrl);
+            if (existing.isPresent()) {
+                return existing.get().getShortCode();
+            }
 
-        // Generate short code
-        String shortCode = Base62Encoder.encode(mapping.getId());
+            // Save to get ID
+            UrlMapping mapping = new UrlMapping(longUrl);
+            mapping = repository.save(mapping);
 
-        // Update entity
-        mapping.setShortCode(shortCode);
-        repository.save(mapping);
+            // Generate short code from ID
+            String shortCode = Base62Encoder.encode(mapping.getId());
 
-        return shortCode;
+            // Update entity with generated code
+            mapping.setShortCode(shortCode);
+            repository.save(mapping);
+
+            return shortCode;
+        }
     }
 
     // Resolve short URL
@@ -47,12 +74,3 @@ public class UrlServiceImpl {
                 .orElseThrow(() -> new RuntimeException("Short URL not found: " + shortCode));
     }
 }
-
-
-/* shortinign flow :
-1. Check duplicate
-2. Save URL → get ID
-3. Encode ID → shortCode
-4. Update DB
-5. Return shortCode
- */
