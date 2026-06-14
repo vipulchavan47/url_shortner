@@ -39,14 +39,14 @@ public class UrlServiceImpl {
                 throw new IllegalArgumentException("Custom alias must contain only lowercase letters and numbers");
             }
             
-            // Save with custom code
+            // Save with custom code (allow same URL with different aliases)
             UrlMapping mapping = new UrlMapping(longUrl);
             mapping.setShortCode(customCode);
             repository.save(mapping);
             return customCode;
         } else {
             // Auto-generate short code
-            // Check if URL already exists
+            // Check if URL already exists (to avoid creating duplicates with auto-generated codes)
             Optional<UrlMapping> existing = repository.findByLongUrl(longUrl);
             if (existing.isPresent()) {
                 return existing.get().getShortCode();
@@ -67,10 +67,26 @@ public class UrlServiceImpl {
         }
     }
 
-    // Resolve short URL
+    // Resolve short URL and increment click count
     public String getLongUrl(String shortCode) {
+        Optional<UrlMapping> mapping = repository.findByShortCode(shortCode);
+        if (mapping.isEmpty()) {
+            throw new RuntimeException("Short URL not found: " + shortCode);
+        }
+        
+        // Increment click count
+        UrlMapping urlMapping = mapping.get();
+        Long currentCount = urlMapping.getClickCount() != null ? urlMapping.getClickCount() : 0L;
+        urlMapping.setClickCount(currentCount + 1);
+        repository.save(urlMapping);
+        
+        return urlMapping.getLongUrl();
+    }
+
+    // Get click count for a short code
+    public Long getClickCount(String shortCode) {
         return repository.findByShortCode(shortCode)
-                .map(UrlMapping::getLongUrl)
-                .orElseThrow(() -> new RuntimeException("Short URL not found: " + shortCode));
+                .map(UrlMapping::getClickCount)
+                .orElse(0L);
     }
 }

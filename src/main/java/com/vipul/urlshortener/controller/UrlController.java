@@ -1,5 +1,6 @@
 package com.vipul.urlshortener.controller;
 
+import com.vipul.urlshortener.dto.AnalyticsResponse;
 import com.vipul.urlshortener.dto.ErrorResponse;
 import com.vipul.urlshortener.dto.UrlRequest;
 import com.vipul.urlshortener.dto.UrlResponse;
@@ -72,6 +73,17 @@ public class UrlController {
                     .build();
 
         } catch (RuntimeException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Analytics endpoint to get click count for a short URL
+    @GetMapping("/api/analytics/{shortCode}")
+    public ResponseEntity<?> getAnalytics(@PathVariable String shortCode) {
+        try {
+            Long clickCount = service.getClickCount(shortCode);
+            return ResponseEntity.ok(new AnalyticsResponse(shortCode, clickCount));
+        } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
