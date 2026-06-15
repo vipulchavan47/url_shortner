@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './App.css';
+import QRCodeDisplay from './components/QRCodeDisplay';
 
 export default function App() {
   const [longUrl, setLongUrl] = useState('');
@@ -119,6 +120,8 @@ export default function App() {
               </button>
             </div>
             
+            <QRCodeDisplay shortUrl={result} shortCode={result.split('/').pop()} />
+
             <div className="analytics">
               <p className="click-count">Clicks: <strong>{clickCount}</strong></p>
               <button onClick={fetchClickCount} className="btn refresh-btn">

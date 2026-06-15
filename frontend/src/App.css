@@ -191,6 +191,69 @@ input[disabled] {
   background-color: #d8d8d8;
 }
 
+.qr-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.qr-label {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0;
+  padding: 15px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.qr-code-container canvas {
+  display: block;
+}
+
+.qr-description {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 12px;
+  margin-top: 10px;
+}
+
+.qr-download-btn {
+  width: 100%;
+  padding: 10px;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  transition: all 0.3s;
+}
+
+.qr-download-btn:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+}
+
+.qr-download-btn:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 600px) {
   .card {
     padding: 20px;
