@@ -4,7 +4,11 @@ import com.vipul.urlshortener.dto.AnalyticsResponse;
 import com.vipul.urlshortener.dto.ErrorResponse;
 import com.vipul.urlshortener.dto.UrlRequest;
 import com.vipul.urlshortener.dto.UrlResponse;
+import com.vipul.urlshortener.entity.UrlMapping;
+import com.vipul.urlshortener.exception.InvalidExpiryException;
+import com.vipul.urlshortener.exception.LinkExpiredException;
 import com.vipul.urlshortener.service.UrlServiceImpl;
+import com.vipul.urlshortener.util.ExpiryUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +41,11 @@ public class UrlController {
 
             String shortCode = service.shortenUrl(
                     request.getLongUrl(),
-                    request.getCustomCode()
+                    request.getCustomCode(),
+                    request.getExpiryTimeMinutes(),
+                    request.getExpiryTimeHours(),
+                    request.getExpiryTimeDays(),
+                    request.getExpiresAtTimestamp()
             );
 
             String shortUrl = ServletUriComponentsBuilder
@@ -46,9 +54,22 @@ public class UrlController {
                     .path(shortCode)
                     .toUriString();
 
+            // Get created mapping to fetch expiry info
+            UrlMapping mapping = service.getAnalytics(shortCode);
+            String expiresAt = ExpiryUtil.formatDateTime(mapping.getExpiresAt());
+            String expiryIn = mapping.getExpiresAt() != null ? ExpiryUtil.getTimeUntilExpiry(mapping.getExpiresAt()) : null;
+
             return ResponseEntity.ok(
-                    new UrlResponse(shortUrl, shortCode)
+                    new UrlResponse(shortUrl, shortCode, expiresAt, expiryIn)
             );
+
+        } catch (InvalidExpiryException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new ErrorResponse(
+                            "INVALID_EXPIRY",
+                            e.getMessage()
+                    ));
 
         } catch (IllegalArgumentException e) {
 
@@ -82,6 +103,9 @@ public class UrlController {
                     .location(URI.create(longUrl))
                     .build();
 
+        } catch (LinkExpiredException ex) {
+            return ResponseEntity.notFound().build();
+
         } catch (RuntimeException ex) {
 
             return ResponseEntity.notFound().build();
@@ -93,10 +117,22 @@ public class UrlController {
 
         try {
 
-            Long clickCount = service.getClickCount(shortCode);
+            UrlMapping mapping = service.getAnalytics(shortCode);
+            
+            String expiresAt = ExpiryUtil.formatDateTime(mapping.getExpiresAt());
+            Boolean isExpired = mapping.isExpired();
+            String status = isExpired ? "expired" : "active";
+            String createdAt = ExpiryUtil.formatDateTime(mapping.getCreatedAt());
 
             return ResponseEntity.ok(
-                    new AnalyticsResponse(shortCode, clickCount)
+                    new AnalyticsResponse(
+                            shortCode,
+                            mapping.getClickCount(),
+                            expiresAt,
+                            isExpired,
+                            status,
+                            createdAt
+                    )
             );
 
         } catch (Exception e) {

@@ -2,10 +2,14 @@ package com.vipul.urlshortener.service;
 
 
 import com.vipul.urlshortener.entity.UrlMapping;
+import com.vipul.urlshortener.exception.InvalidExpiryException;
+import com.vipul.urlshortener.exception.LinkExpiredException;
 import com.vipul.urlshortener.repository.UrlMappingRepository;
 import com.vipul.urlshortener.util.Base62Encoder;
+import com.vipul.urlshortener.util.ExpiryUtil;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -17,12 +21,20 @@ public class UrlServiceImpl {
         this.repository = repository;
     }
 
-    // Shorten URL with optional custom code
-    public String shortenUrl(String longUrl, String customCode) {
+    // Shorten URL with optional custom code and expiry
+    public String shortenUrl(String longUrl, String customCode, Integer expiryTimeMinutes, Integer expiryTimeHours, Integer expiryTimeDays, String expiresAtTimestamp) {
 
         // Validate URL
         if (longUrl == null || longUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("URL cannot be empty");
+        }
+
+        // Calculate expiry time if provided
+        LocalDateTime expiresAt = null;
+        try {
+            expiresAt = ExpiryUtil.calculateExpiryTime(expiryTimeMinutes, expiryTimeHours, expiryTimeDays, expiresAtTimestamp);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidExpiryException(e.getMessage());
         }
 
         // If custom code is provided, validate it
@@ -42,6 +54,7 @@ public class UrlServiceImpl {
             // Save with custom code (allow same URL with different aliases)
             UrlMapping mapping = new UrlMapping(longUrl);
             mapping.setShortCode(customCode);
+            mapping.setExpiresAt(expiresAt);
             repository.save(mapping);
             return customCode;
         } else {
@@ -54,6 +67,7 @@ public class UrlServiceImpl {
 
             // Save to get ID
             UrlMapping mapping = new UrlMapping(longUrl);
+            mapping.setExpiresAt(expiresAt);
             mapping = repository.save(mapping);
 
             // Generate short code from ID
@@ -67,6 +81,11 @@ public class UrlServiceImpl {
         }
     }
 
+    // Backward compatibility - old method without expiry
+    public String shortenUrl(String longUrl, String customCode) {
+        return shortenUrl(longUrl, customCode, null, null, null, null);
+    }
+
     // Resolve short URL and increment click count
     public String getLongUrl(String shortCode) {
         Optional<UrlMapping> mapping = repository.findByShortCode(shortCode);
@@ -74,8 +93,14 @@ public class UrlServiceImpl {
             throw new RuntimeException("Short URL not found: " + shortCode);
         }
         
-        // Increment click count
         UrlMapping urlMapping = mapping.get();
+        
+        // Check if link has expired
+        if (urlMapping.isExpired()) {
+            throw new LinkExpiredException("This link has expired", shortCode, ExpiryUtil.formatDateTime(urlMapping.getExpiresAt()));
+        }
+        
+        // Increment click count
         Long currentCount = urlMapping.getClickCount() != null ? urlMapping.getClickCount() : 0L;
         urlMapping.setClickCount(currentCount + 1);
         repository.save(urlMapping);
@@ -88,5 +113,14 @@ public class UrlServiceImpl {
         return repository.findByShortCode(shortCode)
                 .map(UrlMapping::getClickCount)
                 .orElse(0L);
+    }
+
+    // Get analytics for a short code
+    public UrlMapping getAnalytics(String shortCode) {
+        Optional<UrlMapping> mapping = repository.findByShortCode(shortCode);
+        if (mapping.isEmpty()) {
+            throw new RuntimeException("Short URL not found: " + shortCode);
+        }
+        return mapping.get();
     }
 }

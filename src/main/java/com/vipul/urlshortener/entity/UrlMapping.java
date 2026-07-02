@@ -37,7 +37,12 @@ public class UrlMapping {
     @Column(name = "click_count")
     private Long clickCount = 0L;
 
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
+    public boolean isExpired() {
+        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+    }
 
     // Getters and Setters
     public Long getClickCount() {
@@ -57,4 +62,7 @@ public class UrlMapping {
     public void setShortCode(String shortCode) { this.shortCode = shortCode; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public LocalDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
 }
