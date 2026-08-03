@@ -8,8 +8,10 @@ import com.vipul.urlshortener.repository.UrlMappingRepository;
 import com.vipul.urlshortener.util.Base62Encoder;
 import com.vipul.urlshortener.util.ExpiryUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -60,7 +62,7 @@ public class UrlServiceImpl {
         } else {
             // Auto-generate short code
             // Check if URL already exists (to avoid creating duplicates with auto-generated codes)
-            Optional<UrlMapping> existing = repository.findByLongUrl(longUrl);
+            Optional<UrlMapping> existing = repository.findByLongUrlAndDeletedFalse(longUrl);
             if (existing.isPresent()) {
                 return existing.get().getShortCode();
             }
@@ -88,7 +90,7 @@ public class UrlServiceImpl {
 
     // Resolve short URL and increment click count
     public String getLongUrl(String shortCode) {
-        Optional<UrlMapping> mapping = repository.findByShortCode(shortCode);
+        Optional<UrlMapping> mapping = repository.findByShortCodeAndDeletedFalse(shortCode);
         if (mapping.isEmpty()) {
             throw new RuntimeException("Short URL not found: " + shortCode);
         }
@@ -122,5 +124,17 @@ public class UrlServiceImpl {
             throw new RuntimeException("Short URL not found: " + shortCode);
         }
         return mapping.get();
+    }
+
+    @Transactional
+    public int softDeleteExpiredLinks() {
+        List<UrlMapping> expired = repository.findAllExpiredLinks();
+        if (expired == null || expired.isEmpty()) return 0;
+        for (UrlMapping u : expired) {
+            u.setDeleted(true);
+            u.setDeletedAt(LocalDateTime.now());
+        }
+        repository.saveAll(expired);
+        return expired.size();
     }
 }

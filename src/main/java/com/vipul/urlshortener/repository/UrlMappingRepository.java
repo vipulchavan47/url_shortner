@@ -11,8 +11,12 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
 
     Optional<UrlMapping> findByShortCode(String shortCode);
 
+    Optional<UrlMapping> findByShortCodeAndDeletedFalse(String shortCode);
+
     Optional<UrlMapping> findByLongUrl(String longUrl);
 
-    @Query("SELECT u FROM UrlMapping u WHERE u.expiresAt IS NOT NULL AND u.expiresAt < CURRENT_TIMESTAMP")
+    Optional<UrlMapping> findByLongUrlAndDeletedFalse(String longUrl);
+
+    @Query("SELECT u FROM UrlMapping u WHERE u.expiresAt IS NOT NULL AND u.expiresAt < CURRENT_TIMESTAMP AND (u.deleted = false OR u.deleted IS NULL)")
     List<UrlMapping> findAllExpiredLinks();
 }
