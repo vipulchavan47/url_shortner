@@ -17,6 +17,9 @@ public class UrlMapping {
     @Column(name = "short_code", unique = true, length = 10)
     private String shortCode;
 
+    @Column(name = "analytics_token", unique = true, length = 64)
+    private String analyticsToken;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -70,6 +73,9 @@ public class UrlMapping {
 
     public String getShortCode() { return shortCode; }
     public void setShortCode(String shortCode) { this.shortCode = shortCode; }
+
+    public String getAnalyticsToken() { return analyticsToken; }
+    public void setAnalyticsToken(String analyticsToken) { this.analyticsToken = analyticsToken; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import QRCodeDisplay from './components/QRCodeDisplay';
 
@@ -11,12 +11,26 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [clickCount, setClickCount] = useState(0);
   const [analytics, setAnalytics] = useState(null);
+  const [analyticsMode, setAnalyticsMode] = useState(false);
+  const [analyticsToken, setAnalyticsToken] = useState(null);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [modalInput, setModalInput] = useState('');
   
   // Expiry state
   const [expiryType, setExpiryType] = useState('none');
   const [expiryValue, setExpiryValue] = useState('');
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const m = path.match(/^\/analytics\/(.+)$/);
+    if (m) {
+      setAnalyticsMode(true);
+      setAnalyticsToken(m[1]);
+      fetchAnalytics(m[1]);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,17 +87,23 @@ export default function App() {
     }
   };
 
-  const fetchClickCount = async () => {
-    if (!result) return;
-    const shortCode = result.split('/').pop();
+  const fetchAnalytics = async (token) => {
     try {
-      const response = await fetch(`${API_BASE}/api/analytics/${shortCode}`);
+      const response = await fetch(`${API_BASE}/api/analytics/${token}`);
+      if (!response.ok) return;
       const data = await response.json();
-      setClickCount(data.clickCount);
       setAnalytics(data);
+      setClickCount(data.totalClicks || 0);
     } catch (err) {
-      console.error('Failed to fetch click count:', err);
+      console.error('Failed to fetch analytics:', err);
     }
+  };
+
+  const fetchClickCount = async () => {
+    // prefer analyticsUrl/token if available
+    const token = resultData?.analyticsUrl ? resultData.analyticsUrl.split('/').pop() : null;
+    if (!token) return;
+    fetchAnalytics(token);
   };
 
   const copyToClipboard = async () => {
@@ -93,7 +113,7 @@ export default function App() {
 
   const getExpiryStatus = () => {
     if (!analytics) return null;
-    if (analytics.isExpired) {
+    if (analytics.status === 'EXPIRED') {
       return <span className="expired-badge">Expired</span>;
     }
     return <span className="active-badge">Active</span>;
@@ -112,11 +132,55 @@ export default function App() {
     );
   };
 
+  if (analyticsMode) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h1>BitShort Analytics</h1>
+          {!analytics ? <p>Loading...</p> : (
+            <div className="analytics-dashboard">
+              <div>
+                <h3 style={{marginBottom:8}}>{analytics.shortCode}</h3>
+                <p style={{color:'#9ca3af', marginBottom:12}}><a href={analytics.originalUrl} style={{color:'#3b82f6'}}>{analytics.originalUrl}</a></p>
+              </div>
+
+              <div className="summary-cards">
+                <div className="card-item">Total Clicks <strong>{analytics.totalClicks}</strong></div>
+                <div className="card-item">Today <strong>{analytics.todayClicks}</strong></div>
+                <div className="card-item">Last 7 Days <strong>{analytics.last7DaysClicks}</strong></div>
+                <div className="card-item">Status {getExpiryStatus()}</div>
+              </div>
+
+              <div>
+                <h4 style={{marginTop:12}}>Recent Clicks</h4>
+                <table className="analytics-table">
+                  <thead><tr><th>Time</th><th>Referrer</th><th>Device</th></tr></thead>
+                  <tbody>
+                    {(analytics.recentClicks || []).map((c, idx) => (
+                      <tr key={idx}><td>{new Date(c.occurredAt).toLocaleString()}</td><td>{c.referrer}</td><td>{c.device}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const goToAnalytics = (token) => {
+    if (!token) return;
+    window.history.pushState({}, '', `/analytics/${token}`);
+    window.location.reload();
+  };
+
   return (
     <div className="container">
       <div className="card">
         <h1>URL Shortener</h1>
         <p className="subtitle">Create short and shareable links instantly</p>
+
 
         {!result ? (
           <form onSubmit={handleSubmit}>
@@ -252,6 +316,26 @@ export default function App() {
               </button>
             </div>
 
+            {resultData?.analyticsUrl && (
+              <div className="result-expiry-info" style={{marginTop:8}}>
+                <p style={{marginBottom:6}}>Analytics URL:</p>
+                <div className="result-group" style={{marginTop:6}}>
+                  <input
+                    type="text"
+                    value={resultData.analyticsUrl}
+                    readOnly
+                    className="result-input"
+                  />
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(resultData.analyticsUrl); alert('Analytics URL copied'); }}
+                    className="btn copy-btn"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
             {resultData?.expiresAt && (
               <div className="result-expiry-info">
                 <p>Expires: <strong>{new Date(resultData.expiresAt).toLocaleString()}</strong></p>
@@ -264,9 +348,23 @@ export default function App() {
             <div className="analytics">
               <p className="click-count">Clicks: <strong>{clickCount}</strong></p>
               {getExpiryInfo()}
-              <button onClick={fetchClickCount} className="btn refresh-btn">
-                Refresh Count
-              </button>
+              <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
+                <button onClick={fetchClickCount} className="btn refresh-btn">
+                  Refresh Count
+                </button>
+                {resultData?.analyticsUrl && (
+                  <button
+                    onClick={() => {
+                      // open modal with analytics URL prefilled
+                      setModalInput(resultData.analyticsUrl || '');
+                      setShowAnalyticsModal(true);
+                    }}
+                    className="btn"
+                  >
+                    View Analytics
+                  </button>
+                )}
+              </div>
             </div>
 
             <a href={result} target="_blank" rel="noopener noreferrer" className="link-btn">
@@ -284,6 +382,40 @@ export default function App() {
             >
               Create Another
             </button>
+          </div>
+        )}
+
+        {/* separator and view analytics button */}
+        <div style={{marginTop:24, textAlign:'center'}}>
+          <hr style={{border:'none', height:1, background:'rgba(255,255,255,0.04)', marginBottom:12}} />
+          <div style={{color:'#9ca3af', marginBottom:8}}>Already have an analytics link?</div>
+          <button className="btn secondary-btn" style={{width:200, margin:'0 auto'}} onClick={() => { setModalInput(''); setShowAnalyticsModal(true); }}>
+            View Analytics
+          </button>
+        </div>
+
+        {/* Modal */}
+        {showAnalyticsModal && (
+          <div className="modal-overlay" onClick={() => setShowAnalyticsModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <h3 style={{margin:0}}>View Analytics</h3>
+                <button className="modal-close" onClick={() => setShowAnalyticsModal(false)}>×</button>
+              </div>
+              <p style={{color:'#9ca3af', marginTop:8}}>Enter your analytics URL</p>
+              <input type="text" placeholder="https://.../analytics/" value={modalInput} onChange={(e) => setModalInput(e.target.value)} style={{width:'100%', marginTop:8, padding:10, borderRadius:8, border:'1px solid rgba(255,255,255,0.04)', background:'rgba(255,255,255,0.02)', color:'#e6eef8'}} />
+              <div style={{marginTop:12, display:'flex', justifyContent:'flex-end'}}>
+                <button className="btn" onClick={() => {
+                  const token = (modalInput || '').split('/').pop();
+                  if (!token) {
+                    alert('Please enter a valid analytics URL or token');
+                    return;
+                  }
+                  window.history.pushState({}, '', `/analytics/${token}`);
+                  window.location.reload();
+                }}>View Analytics</button>
+              </div>
+            </div>
           </div>
         )}
       </div>

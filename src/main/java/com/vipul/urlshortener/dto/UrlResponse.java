@@ -3,6 +3,7 @@ package com.vipul.urlshortener.dto;
 public class UrlResponse {
 
     private String shortUrl;
+    private String analyticsUrl;
     private String shortCode;
     private String expiresAt;
     private String expiryIn;
@@ -19,9 +20,19 @@ public class UrlResponse {
         this.expiryIn = expiryIn;
     }
 
+    public UrlResponse(String shortUrl, String shortCode, String analyticsUrl, String expiresAt, String expiryIn) {
+        this.shortUrl = shortUrl;
+        this.shortCode = shortCode;
+        this.analyticsUrl = analyticsUrl;
+        this.expiresAt = expiresAt;
+        this.expiryIn = expiryIn;
+    }
+
     public String getShortUrl() {
         return shortUrl;
     }
+
+    public String getAnalyticsUrl() { return analyticsUrl; }
 
     public String getShortCode() {
         return shortCode;
