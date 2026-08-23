@@ -13,6 +13,8 @@ export default function App() {
   const [analytics, setAnalytics] = useState(null);
   const [analyticsMode, setAnalyticsMode] = useState(false);
   const [analyticsToken, setAnalyticsToken] = useState(null);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [modalInput, setModalInput] = useState('');
   
   // Expiry state
   const [expiryType, setExpiryType] = useState('none');
@@ -179,26 +181,6 @@ export default function App() {
         <h1>URL Shortener</h1>
         <p className="subtitle">Create short and shareable links instantly</p>
 
-        {/* Quick access to analytics by token */}
-        <div className="analytics-quick-access">
-          <input
-            type="text"
-            placeholder="Paste analytics token or URL"
-            value={analyticsToken || ''}
-            onChange={(e) => setAnalyticsToken(e.target.value)}
-          />
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              const t = (analyticsToken || '').split('/').pop();
-              goToAnalytics(t);
-            }}
-            style={{marginTop: 8}}
-          >
-            View Analytics
-          </button>
-        </div>
 
         {!result ? (
           <form onSubmit={handleSubmit}>
@@ -337,12 +319,20 @@ export default function App() {
             {resultData?.analyticsUrl && (
               <div className="result-expiry-info" style={{marginTop:8}}>
                 <p style={{marginBottom:6}}>Analytics URL:</p>
-                <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                  <input type="text" value={resultData.analyticsUrl} readOnly className="analytics-url-input" />
-                  <button className="btn" onClick={() => { navigator.clipboard.writeText(resultData.analyticsUrl); alert('Analytics URL copied'); }}>Copy</button>
+                <div className="result-group" style={{marginTop:6}}>
+                  <input
+                    type="text"
+                    value={resultData.analyticsUrl}
+                    readOnly
+                    className="result-input"
+                  />
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(resultData.analyticsUrl); alert('Analytics URL copied'); }}
+                    className="btn copy-btn"
+                  >
+                    Copy
+                  </button>
                 </div>
-                {/* Visible fallback text in case the input appears empty in some browsers */}
-                <div className="analytics-url-text">{resultData.analyticsUrl}</div>
               </div>
             )}
 
@@ -365,11 +355,9 @@ export default function App() {
                 {resultData?.analyticsUrl && (
                   <button
                     onClick={() => {
-                      // navigate within app to analytics route
-                      const token = resultData.analyticsUrl.split('/').pop();
-                      window.history.pushState({}, '', `/analytics/${token}`);
-                      // trigger analytics mode render
-                      window.location.reload();
+                      // open modal with analytics URL prefilled
+                      setModalInput(resultData.analyticsUrl || '');
+                      setShowAnalyticsModal(true);
                     }}
                     className="btn"
                   >
@@ -394,6 +382,40 @@ export default function App() {
             >
               Create Another
             </button>
+          </div>
+        )}
+
+        {/* separator and view analytics button */}
+        <div style={{marginTop:24, textAlign:'center'}}>
+          <hr style={{border:'none', height:1, background:'rgba(255,255,255,0.04)', marginBottom:12}} />
+          <div style={{color:'#9ca3af', marginBottom:8}}>Already have an analytics link?</div>
+          <button className="btn secondary-btn" style={{width:200, margin:'0 auto'}} onClick={() => { setModalInput(''); setShowAnalyticsModal(true); }}>
+            View Analytics
+          </button>
+        </div>
+
+        {/* Modal */}
+        {showAnalyticsModal && (
+          <div className="modal-overlay" onClick={() => setShowAnalyticsModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <h3 style={{margin:0}}>View Analytics</h3>
+                <button className="modal-close" onClick={() => setShowAnalyticsModal(false)}>×</button>
+              </div>
+              <p style={{color:'#9ca3af', marginTop:8}}>Enter your analytics URL</p>
+              <input type="text" placeholder="https://.../analytics/" value={modalInput} onChange={(e) => setModalInput(e.target.value)} style={{width:'100%', marginTop:8, padding:10, borderRadius:8, border:'1px solid rgba(255,255,255,0.04)', background:'rgba(255,255,255,0.02)', color:'#e6eef8'}} />
+              <div style={{marginTop:12, display:'flex', justifyContent:'flex-end'}}>
+                <button className="btn" onClick={() => {
+                  const token = (modalInput || '').split('/').pop();
+                  if (!token) {
+                    alert('Please enter a valid analytics URL or token');
+                    return;
+                  }
+                  window.history.pushState({}, '', `/analytics/${token}`);
+                  window.location.reload();
+                }}>View Analytics</button>
+              </div>
+            </div>
           </div>
         )}
       </div>
