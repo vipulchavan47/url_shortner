@@ -17,7 +17,7 @@ body {
 
 .container {
   width: 100%;
-  max-width: 500px;
+  max-width: 720px;
 }
 
 .card {
@@ -185,6 +185,103 @@ input[disabled] {
   text-align: center;
 }
 
+/* Quick access */
+.analytics-quick-access {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.analytics-quick-access input {
+  flex: 1;
+  padding: 10px;
+  background: #262626;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #e5e5e5;
+}
+
+.analytics-quick-access .btn {
+  width: auto;
+  padding: 10px 16px;
+  min-width: 140px;
+}
+
+/* analytics url input in result */
+.analytics-url-input {
+  flex: 1;
+  min-width: 0; /* allow flex children to shrink properly inside limited containers */
+  width: 100%;
+  padding: 8px;
+  background: #262626;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #e5e5e5;
+  overflow-x: auto; /* allow horizontal scrolling for long tokens/URLs */
+  word-break: break-all;
+}
+
+/* Visible text fallback for analytics URL (in case input rendering is hidden in some contexts) */
+.analytics-url-text {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Segoe UI Mono', monospace;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Analytics dashboard styles */
+.analytics-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.card-item {
+  background: #0f1724;
+  border: 1px solid #1f2937;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.card-item strong {
+  display: block;
+  font-size: 20px;
+  color: #3b82f6;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.analytics-table th {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 .click-count {
   color: #a0a0a0;
   font-size: 14px;
@@ -299,7 +396,10 @@ input[type="number"]:focus {
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 15px;
-  text-align: center;
+  text-align: left;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .result-expiry-info p {

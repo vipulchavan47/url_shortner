@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import QRCodeDisplay from './components/QRCodeDisplay';
 
@@ -11,12 +11,24 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [clickCount, setClickCount] = useState(0);
   const [analytics, setAnalytics] = useState(null);
+  const [analyticsMode, setAnalyticsMode] = useState(false);
+  const [analyticsToken, setAnalyticsToken] = useState(null);
   
   // Expiry state
   const [expiryType, setExpiryType] = useState('none');
   const [expiryValue, setExpiryValue] = useState('');
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const m = path.match(/^\/analytics\/(.+)$/);
+    if (m) {
+      setAnalyticsMode(true);
+      setAnalyticsToken(m[1]);
+      fetchAnalytics(m[1]);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,17 +85,23 @@ export default function App() {
     }
   };
 
-  const fetchClickCount = async () => {
-    if (!result) return;
-    const shortCode = result.split('/').pop();
+  const fetchAnalytics = async (token) => {
     try {
-      const response = await fetch(`${API_BASE}/api/analytics/${shortCode}`);
+      const response = await fetch(`${API_BASE}/api/analytics/${token}`);
+      if (!response.ok) return;
       const data = await response.json();
-      setClickCount(data.clickCount);
       setAnalytics(data);
+      setClickCount(data.totalClicks || 0);
     } catch (err) {
-      console.error('Failed to fetch click count:', err);
+      console.error('Failed to fetch analytics:', err);
     }
+  };
+
+  const fetchClickCount = async () => {
+    // prefer analyticsUrl/token if available
+    const token = resultData?.analyticsUrl ? resultData.analyticsUrl.split('/').pop() : null;
+    if (!token) return;
+    fetchAnalytics(token);
   };
 
   const copyToClipboard = async () => {
@@ -93,7 +111,7 @@ export default function App() {
 
   const getExpiryStatus = () => {
     if (!analytics) return null;
-    if (analytics.isExpired) {
+    if (analytics.status === 'EXPIRED') {
       return <span className="expired-badge">Expired</span>;
     }
     return <span className="active-badge">Active</span>;
@@ -112,11 +130,75 @@ export default function App() {
     );
   };
 
+  if (analyticsMode) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h1>BitShort Analytics</h1>
+          {!analytics ? <p>Loading...</p> : (
+            <div className="analytics-dashboard">
+              <div>
+                <h3 style={{marginBottom:8}}>{analytics.shortCode}</h3>
+                <p style={{color:'#9ca3af', marginBottom:12}}><a href={analytics.originalUrl} style={{color:'#3b82f6'}}>{analytics.originalUrl}</a></p>
+              </div>
+
+              <div className="summary-cards">
+                <div className="card-item">Total Clicks <strong>{analytics.totalClicks}</strong></div>
+                <div className="card-item">Today <strong>{analytics.todayClicks}</strong></div>
+                <div className="card-item">Last 7 Days <strong>{analytics.last7DaysClicks}</strong></div>
+                <div className="card-item">Status {getExpiryStatus()}</div>
+              </div>
+
+              <div>
+                <h4 style={{marginTop:12}}>Recent Clicks</h4>
+                <table className="analytics-table">
+                  <thead><tr><th>Time</th><th>Referrer</th><th>Device</th></tr></thead>
+                  <tbody>
+                    {(analytics.recentClicks || []).map((c, idx) => (
+                      <tr key={idx}><td>{new Date(c.occurredAt).toLocaleString()}</td><td>{c.referrer}</td><td>{c.device}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const goToAnalytics = (token) => {
+    if (!token) return;
+    window.history.pushState({}, '', `/analytics/${token}`);
+    window.location.reload();
+  };
+
   return (
     <div className="container">
       <div className="card">
         <h1>URL Shortener</h1>
         <p className="subtitle">Create short and shareable links instantly</p>
+
+        {/* Quick access to analytics by token */}
+        <div className="analytics-quick-access">
+          <input
+            type="text"
+            placeholder="Paste analytics token or URL"
+            value={analyticsToken || ''}
+            onChange={(e) => setAnalyticsToken(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              const t = (analyticsToken || '').split('/').pop();
+              goToAnalytics(t);
+            }}
+            style={{marginTop: 8}}
+          >
+            View Analytics
+          </button>
+        </div>
 
         {!result ? (
           <form onSubmit={handleSubmit}>
@@ -252,6 +334,18 @@ export default function App() {
               </button>
             </div>
 
+            {resultData?.analyticsUrl && (
+              <div className="result-expiry-info" style={{marginTop:8}}>
+                <p style={{marginBottom:6}}>Analytics URL:</p>
+                <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                  <input type="text" value={resultData.analyticsUrl} readOnly className="analytics-url-input" />
+                  <button className="btn" onClick={() => { navigator.clipboard.writeText(resultData.analyticsUrl); alert('Analytics URL copied'); }}>Copy</button>
+                </div>
+                {/* Visible fallback text in case the input appears empty in some browsers */}
+                <div className="analytics-url-text">{resultData.analyticsUrl}</div>
+              </div>
+            )}
+
             {resultData?.expiresAt && (
               <div className="result-expiry-info">
                 <p>Expires: <strong>{new Date(resultData.expiresAt).toLocaleString()}</strong></p>
@@ -264,9 +358,25 @@ export default function App() {
             <div className="analytics">
               <p className="click-count">Clicks: <strong>{clickCount}</strong></p>
               {getExpiryInfo()}
-              <button onClick={fetchClickCount} className="btn refresh-btn">
-                Refresh Count
-              </button>
+              <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
+                <button onClick={fetchClickCount} className="btn refresh-btn">
+                  Refresh Count
+                </button>
+                {resultData?.analyticsUrl && (
+                  <button
+                    onClick={() => {
+                      // navigate within app to analytics route
+                      const token = resultData.analyticsUrl.split('/').pop();
+                      window.history.pushState({}, '', `/analytics/${token}`);
+                      // trigger analytics mode render
+                      window.location.reload();
+                    }}
+                    className="btn"
+                  >
+                    View Analytics
+                  </button>
+                )}
+              </div>
             </div>
 
             <a href={result} target="_blank" rel="noopener noreferrer" className="link-btn">
