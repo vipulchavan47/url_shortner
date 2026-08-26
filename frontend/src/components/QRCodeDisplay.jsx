@@ -15,23 +15,25 @@ export default function QRCodeDisplay({ shortUrl, shortCode }) {
   };
 
   return (
-    <div className="qr-section">
-      <p className="qr-label">QR Code</p>
-      <div className="qr-code-container" ref={qrRef}>
+    <div className="qr-display">
+      <div className="qr-code-box" ref={qrRef}>
         <QRCode
           value={shortUrl}
-          size={200}
+          size={160}
           level="H"
           includeMargin={true}
-          fgColor="#000000"
+          fgColor="#1a1a1a"
           bgColor="#ffffff"
         />
       </div>
-      <p className="qr-description">Scan with your phone to open the short URL</p>
-      <button onClick={downloadQRCode} className="qr-download-btn">
-        Download QR Code
+      <button onClick={downloadQRCode} className="btn-download-qr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Download
       </button>
     </div>
   );
 }
-
