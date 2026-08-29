@@ -17,11 +17,11 @@ public class UrlMapping {
     @Column(name = "short_code", unique = true, length = 10)
     private String shortCode;
 
-    @Column(name = "analytics_token", unique = true, length = 64)
-    private String analyticsToken;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     // Constructors
     public UrlMapping() {
@@ -37,36 +37,14 @@ public class UrlMapping {
         this.createdAt = LocalDateTime.now();
     }
 
-    @Column(name = "click_count")
-    private Long clickCount = 0L;
-
-    @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
-
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
     public boolean isExpired() {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }
 
-    public boolean isDeleted() {
-        return deleted != null && deleted;
-    }
-
     // Getters and Setters
-    public Long getClickCount() {
-        return clickCount;
-    }
-
-    public void setClickCount(Long clickCount) {
-        this.clickCount = clickCount;
-    }
-
     public Long getId() { return id; }
+
+    public void setId(Long id) { this.id = id; }
 
     public String getLongUrl() { return longUrl; }
     public void setLongUrl(String longUrl) { this.longUrl = longUrl; }
@@ -74,17 +52,8 @@ public class UrlMapping {
     public String getShortCode() { return shortCode; }
     public void setShortCode(String shortCode) { this.shortCode = shortCode; }
 
-    public String getAnalyticsToken() { return analyticsToken; }
-    public void setAnalyticsToken(String analyticsToken) { this.analyticsToken = analyticsToken; }
-
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public LocalDateTime getExpiresAt() { return expiresAt; }
     public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
-
-    public Boolean getDeleted() { return deleted; }
-    public void setDeleted(Boolean deleted) { this.deleted = deleted; }
-
-    public LocalDateTime getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

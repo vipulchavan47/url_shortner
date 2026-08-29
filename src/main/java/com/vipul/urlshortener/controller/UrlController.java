@@ -1,6 +1,5 @@
 package com.vipul.urlshortener.controller;
 
-import com.vipul.urlshortener.dto.AnalyticsFullResponse;
 import com.vipul.urlshortener.dto.ErrorResponse;
 import com.vipul.urlshortener.dto.UrlRequest;
 import com.vipul.urlshortener.dto.UrlResponse;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 @RestController
@@ -55,19 +53,12 @@ public class UrlController {
                     .path(shortCode)
                     .toUriString();
 
-            // Get created mapping to fetch expiry info
-            UrlMapping mapping = service.getAnalytics(shortCode);
+            UrlMapping mapping = service.findByShortCode(shortCode).orElseThrow();
             String expiresAt = ExpiryUtil.formatDateTime(mapping.getExpiresAt());
             String expiryIn = mapping.getExpiresAt() != null ? ExpiryUtil.getTimeUntilExpiry(mapping.getExpiresAt()) : null;
 
-            String analyticsUrl = ServletUriComponentsBuilder
-                    .fromCurrentContextPath()
-                    .path("/analytics/")
-                    .path(mapping.getAnalyticsToken())
-                    .toUriString();
-
             return ResponseEntity.ok(
-                    new UrlResponse(shortUrl, shortCode, analyticsUrl, expiresAt, expiryIn)
+                    new UrlResponse(shortUrl, shortCode, expiresAt, expiryIn)
             );
 
         } catch (InvalidExpiryException e) {
@@ -99,13 +90,11 @@ public class UrlController {
     }
 
     @GetMapping("/{shortCode:[a-zA-Z0-9]+}")
-    public ResponseEntity<Void> redirect(@PathVariable String shortCode, HttpServletRequest request) {
+    public ResponseEntity<Void> redirect(@PathVariable String shortCode) {
 
         try {
 
             String longUrl = service.getLongUrl(shortCode);
-            // record analytics (non-blocking for now)
-            service.recordAnalyticsEvent(shortCode, request);
 
             return ResponseEntity
                     .status(302)
@@ -117,21 +106,6 @@ public class UrlController {
 
         } catch (RuntimeException ex) {
 
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @GetMapping("/api/analytics/{analyticsToken}")
-    public ResponseEntity<?> getAnalytics(@PathVariable String analyticsToken) {
-
-        System.out.println("Controller.getAnalytics token='" + analyticsToken + "'");
-        try {
-
-            AnalyticsFullResponse resp = service.getAnalyticsByToken(analyticsToken);
-            return ResponseEntity.ok(resp);
-
-        } catch (Exception e) {
-            System.out.println("Controller.getAnalytics failed: " + e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }

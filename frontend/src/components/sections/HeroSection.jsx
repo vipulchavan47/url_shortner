@@ -77,7 +77,7 @@ export default function HeroSection() {
     <section className="hero" id="shorten">
       <p className="section-eyebrow">SHORTEN YOUR LINK</p>
       <h1 className="hero-title">
-        Turn long URLs into<br />tiny links.
+        Turn long URLs into<br /><span className="hero-accent">tiny links.</span>
       </h1>
       <p className="hero-subtitle">
         Create a clean, shareable link in seconds.

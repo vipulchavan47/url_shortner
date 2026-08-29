@@ -19,11 +19,16 @@ public class ExpiryUtil {
             return LocalDateTime.now().plusDays(days);
         }
         if (timestamp != null && !timestamp.trim().isEmpty()) {
+            LocalDateTime parsed;
             try {
-                return LocalDateTime.parse(timestamp, ISO_FORMATTER);
+                parsed = LocalDateTime.parse(timestamp.trim(), ISO_FORMATTER);
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid timestamp format. Expected ISO 8601: yyyy-MM-ddTHH:mm:ss");
             }
+            if (parsed.isBefore(LocalDateTime.now())) {
+                throw new IllegalArgumentException("Expiration date/time must be in the future");
+            }
+            return parsed;
         }
         return null;
     }

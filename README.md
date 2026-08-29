@@ -1,20 +1,15 @@
 # URL Shortener
 
-A full-stack web-application to generate short URLs, track clicks, generate QR codes, and view detailed URL analytics. Built with Spring Boot backend and React frontend.
+A full-stack web-application to generate short URLs, generate QR codes, and configure URL expiration. Built with Spring Boot backend and React frontend.
 
 ## Features
 
 - Generate short URLs with auto-generated or custom codes
-- Redirect to original URLs with click tracking
+- Redirect to original URLs with expiration checks
 - QR code generation and download
 - Configurable URL expiration
-- Persistent URL analytics without user accounts
-- Analytics dashboard with:
-    - Total and daily clicks
-    - Clicks over time
-    - Device breakdown
-    - Referrer/source breakdown
-    - Recent click activity
+- Automatic cleanup of expired URLs
+- Endpoint-level rate limiting
 - PostgreSQL database for persistence
 
 ## Tech Stack
@@ -30,9 +25,8 @@ urlshortener/
 │   ├── controller/     → HTTP request handling
 │   ├── service/        → Business logic
 │   ├── repository/     → Database operations (JPA)
-│   ├── entity/         → UrlMapping & AnalyticsEvent
+│   ├── entity/         → UrlMapping
 │   ├── dto/            → Request/Response objects
-│   ├── config/         → Application configuration
 │   └── util/           → Base62 encoding utility
 ├── frontend/
 │   └── src/
@@ -41,7 +35,7 @@ urlshortener/
 │       └── App.css           → Styling
 ├── application.properties    → Database config
 └── pom.xml                   → Maven dependencies
-````
+```
 
 ## How to Run
 
@@ -70,25 +64,10 @@ Frontend runs on `http://localhost:3000`
 
 ## API Endpoints
 
-| Method | Endpoint                          | Purpose                   |
-| ------ | --------------------------------- | ------------------------- |
-| POST   | `/api/shorten`                    | Create short URL          |
-| GET    | `/{shortCode}`                    | Redirect and record click |
-| GET    | `/api/analytics/{analyticsToken}` | Get URL analytics         |
-
-## Analytics
-
-Each URL receives a unique analytics token that provides access to its analytics dashboard without requiring an account.
-
-Analytics include:
-
-* Total clicks
-* Daily click statistics
-* Device breakdown
-* Referrer/source statistics
-* Recent clicks
-
-Click events are stored separately from the URL mapping to support persistent analytics.
+| Method | Endpoint            | Purpose            |
+| ------ | ------------------- | ------------------ |
+| POST   | `/api/shorten`      | Create short URL   |
+| GET    | `/{shortCode}`      | Redirect to URL    |
 
 ## Example Request
 
@@ -105,7 +84,6 @@ curl -X POST http://localhost:8080/api/shorten \
 ```json
 {
   "shortUrl": "http://localhost:8080/mylink",
-  "analyticsUrl": "http://localhost:3000/analytics/8fK2...",
   "shortCode": "mylink"
 }
 ```
@@ -115,6 +93,3 @@ curl -X POST http://localhost:8080/api/shorten \
 Frontend: [https://bitshortner.vercel.app/](https://bitshortner.vercel.app/)
 
 Backend: Deployed on Render
-
-
-

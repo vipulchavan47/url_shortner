@@ -18,7 +18,7 @@ public class ScheduledCleanupService {
     // Runs based on cleanup.expired.cron property (default: hourly)
     @Scheduled(cron = "${cleanup.expired.cron:0 0 * * * *}")
     public void cleanupExpired() {
-        int count = urlService.softDeleteExpiredLinks();
-        logger.info("Soft-deleted {} expired links", count);
+        int count = urlService.deleteExpiredLinks();
+        logger.info("Deleted {} expired links", count);
     }
 }

@@ -2,8 +2,11 @@ package com.vipul.urlshortener.repository;
 
 import com.vipul.urlshortener.entity.UrlMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,14 +14,9 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
 
     Optional<UrlMapping> findByShortCode(String shortCode);
 
-    Optional<UrlMapping> findByShortCodeAndDeletedFalse(String shortCode);
+    List<UrlMapping> findAllByLongUrl(String longUrl);
 
-    Optional<UrlMapping> findByLongUrl(String longUrl);
-
-    Optional<UrlMapping> findByLongUrlAndDeletedFalse(String longUrl);
-
-    Optional<UrlMapping> findByAnalyticsToken(String analyticsToken);
-
-    @Query("SELECT u FROM UrlMapping u WHERE u.expiresAt IS NOT NULL AND u.expiresAt < CURRENT_TIMESTAMP AND (u.deleted = false OR u.deleted IS NULL)")
-    List<UrlMapping> findAllExpiredLinks();
+    @Modifying
+    @Query("DELETE FROM UrlMapping u WHERE u.expiresAt IS NOT NULL AND u.expiresAt < :now")
+    int deleteExpiredLinks(@Param("now") LocalDateTime now);
 }
