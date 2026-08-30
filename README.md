@@ -1,21 +1,22 @@
 # URL Shortener
 
-A full-stack web-application to generate short URLs, generate QR codes, and configure URL expiration. Built with Spring Boot backend and React frontend.
+A full-stack web application to generate short URLs, generate QR codes, and configure URL expiration. Built with Spring Boot backend and React frontend.
 
 ## Features
 
-- Generate short URLs with auto-generated or custom codes
-- Redirect to original URLs with expiration checks
-- QR code generation and download
-- Configurable URL expiration
-- Automatic cleanup of expired URLs
-- Endpoint-level rate limiting
-- PostgreSQL database for persistence
+* Generate short URLs with auto-generated or custom codes
+* Base62-based short code generation
+* Redirect to original URLs with expiration checks
+* QR code generation and download
+* Configurable URL expiration
+* Automatic cleanup of expired URLs
+* Endpoint-level rate limiting with Bucket4j
+* PostgreSQL database for persistence
 
 ## Tech Stack
 
-**Backend:** Java 17 | Spring Boot 4.0.5 | Spring Data JPA | PostgreSQL  
-**Frontend:** React 18 | Vite | qrcode.react (QR library)
+**Backend:** Java 17 | Spring Boot 4.0.5 | Spring Data JPA | PostgreSQL | Bucket4j
+**Frontend:** React 18 | Vite | qrcode.react
 
 ## Project Structure
 
@@ -27,13 +28,14 @@ urlshortener/
 │   ├── repository/     → Database operations (JPA)
 │   ├── entity/         → UrlMapping
 │   ├── dto/            → Request/Response objects
-│   └── util/           → Base62 encoding utility
+│   ├── filter/         → Rate limiting filter
+│   └── util/           → Base62 and expiry utilities
 ├── frontend/
 │   └── src/
 │       ├── App.jsx           → Main React component
 │       ├── components/       → UI components
 │       └── App.css           → Styling
-├── application.properties    → Database config
+├── application.properties    → Application configuration
 └── pom.xml                   → Maven dependencies
 ```
 
@@ -42,9 +44,8 @@ urlshortener/
 ### Backend
 
 ```bash
-cd /home/vipul/IdeaProjects/urlshortener
-
-# Update database credentials in src/main/resources/application.properties
+# Update database configuration in
+# src/main/resources/application.properties
 
 ./mvnw spring-boot:run
 ```
@@ -64,10 +65,10 @@ Frontend runs on `http://localhost:3000`
 
 ## API Endpoints
 
-| Method | Endpoint            | Purpose            |
-| ------ | ------------------- | ------------------ |
-| POST   | `/api/shorten`      | Create short URL   |
-| GET    | `/{shortCode}`      | Redirect to URL    |
+| Method | Endpoint       | Purpose                  |
+| ------ | -------------- | ------------------------ |
+| POST   | `/api/shorten` | Create short URL         |
+| GET    | `/{shortCode}` | Redirect to original URL |
 
 ## Example Request
 
@@ -90,6 +91,6 @@ curl -X POST http://localhost:8080/api/shorten \
 
 ## Live Demo
 
-Frontend: [https://bitshortner.vercel.app/](https://bitshortner.vercel.app/)
+Frontend: https://bitshortner.vercel.app/
 
 Backend: Deployed on Render
